@@ -122,49 +122,42 @@ body {
   top: -8px;
 }
 
-.tabs {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 6px;
-  margin-bottom: 14px;
-  padding: 4px;
-  background: rgba(12, 36, 30, 0.72);
-  border: 1px solid rgba(201, 161, 91, 0.28);
-}
-
-.tab {
-  margin: 0;
-  min-height: 44px;
-  padding: 10px 12px;
-  border: 0;
-  background: transparent;
-  color: #d8ccb4;
-  font-family: "Source Sans 3", sans-serif;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.tab.is-active {
-  background: var(--gold);
-  color: var(--deep);
-}
-
-.panels {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 18px;
-}
-
 .panel {
   background: rgba(12, 36, 30, 0.72);
   border: 1px solid rgba(201, 161, 91, 0.28);
   padding: 18px;
-  display: none;
+  display: block;
 }
 
-.panel.is-active {
-  display: block;
+.roster {
+  margin-top: 18px;
+}
+
+.roster h2 {
+  margin: 0 0 12px;
+  font-family: "Fraunces", serif;
+  font-size: 1.3rem;
+  font-weight: 500;
+}
+
+.name-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.name-list li {
+  padding: 12px 14px;
+  background: rgba(12, 36, 30, 0.72);
+  border: 1px solid rgba(201, 161, 91, 0.28);
+  font-size: 1.05rem;
+}
+
+.empty-roster {
+  margin: 0;
+  color: #d8ccb4;
 }
 
 .panel h2 {
@@ -323,11 +316,11 @@ button.secondary {
   order: 1;
 }
 
-.tabs {
+.panel {
   order: 4;
 }
 
-.panels {
+.roster {
   order: 5;
 }
 
@@ -378,25 +371,8 @@ button.secondary {
     top: -10px;
   }
 
-  .tabs {
-    display: none;
-  }
-
-  .panels {
-    grid-template-columns: 1fr 1fr;
-  }
-
   .panel {
-    display: block;
     padding: 22px;
-  }
-
-  .host-panel {
-    grid-column: 1 / -1;
-  }
-
-  .host-actions {
-    grid-template-columns: 1fr 1fr;
   }
 
   .panel h2 {

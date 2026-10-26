@@ -20,9 +20,7 @@
       <header class="mast">
         <p class="eyebrow" id="statusLine">Loading the hat…</p>
         <h1>Names in a hat</h1>
-        <p class="lede">
-          Add your name and a 4-digit PIN. Everyone joins first. Matching happens later, then you pull your slip.
-        </p>
+        <p class="lede">Add your name to the draw. Matching happens later.</p>
       </header>
 
       <div class="hat" aria-hidden="true">
@@ -36,92 +34,30 @@
       <div id="result" class="result" hidden></div>
       <p id="error" class="error" hidden></p>
 
-      <div class="tabs" role="tablist" aria-label="Choose an action">
-        <button type="button" class="tab is-active" data-tab="join" aria-selected="true">Join</button>
-        <button type="button" class="tab" data-tab="lookup" aria-selected="false">Match</button>
-        <button type="button" class="tab" data-tab="host" aria-selected="false">Host</button>
-      </div>
+      <section class="panel is-active" aria-labelledby="joinHeading">
+        <h2 id="joinHeading">Join the draw</h2>
+        <form id="joinForm">
+          <label>
+            Your name
+            <input
+              name="name"
+              type="text"
+              maxlength="80"
+              autocomplete="name"
+              autocapitalize="words"
+              enterkeyhint="done"
+              required
+            />
+          </label>
+          <button type="submit">Put my name in</button>
+        </form>
+      </section>
 
-      <div class="panels">
-        <section class="panel is-active" data-panel="join" aria-labelledby="joinHeading">
-          <h2 id="joinHeading">Join the draw</h2>
-          <form id="joinForm">
-            <label>
-              Your name
-              <input
-                name="name"
-                type="text"
-                maxlength="80"
-                autocomplete="name"
-                autocapitalize="words"
-                enterkeyhint="next"
-                required
-              />
-            </label>
-            <label>
-              4-digit PIN
-              <input
-                name="pin"
-                type="password"
-                inputmode="numeric"
-                pattern="\d{4}"
-                maxlength="4"
-                autocomplete="one-time-code"
-                enterkeyhint="done"
-                required
-              />
-            </label>
-            <button type="submit">Put my name in</button>
-          </form>
-        </section>
-
-        <section class="panel" data-panel="lookup" aria-labelledby="lookupHeading">
-          <h2 id="lookupHeading">See my match</h2>
-          <form id="lookupForm">
-            <label>
-              Your name
-              <input
-                name="name"
-                type="text"
-                maxlength="80"
-                autocomplete="name"
-                autocapitalize="words"
-                enterkeyhint="next"
-                required
-              />
-            </label>
-            <label>
-              4-digit PIN
-              <input
-                name="pin"
-                type="password"
-                inputmode="numeric"
-                pattern="\d{4}"
-                maxlength="4"
-                autocomplete="one-time-code"
-                enterkeyhint="done"
-                required
-              />
-            </label>
-            <button type="submit">Pull my slip</button>
-          </form>
-        </section>
-
-        <section class="panel host-panel" data-panel="host" aria-labelledby="hostHeading">
-          <h2 id="hostHeading">Host</h2>
-          <p class="host-copy">When every name is in, draw the matches. People then look themselves up.</p>
-          <form id="hostForm">
-            <label>
-              Host secret
-              <input name="secret" type="password" autocomplete="off" required />
-            </label>
-            <div class="host-actions">
-              <button type="submit" name="action" value="draw">Draw names</button>
-              <button type="submit" name="action" value="reset" class="secondary">Reset draw</button>
-            </div>
-          </form>
-        </section>
-      </div>
+      <section class="roster" aria-live="polite">
+        <h2>In the hat</h2>
+        <ol id="nameList" class="name-list"></ol>
+        <p id="emptyRoster" class="empty-roster">No names yet. Be the first.</p>
+      </section>
     </div>
     <script src="/app.js"></script>
   </body>

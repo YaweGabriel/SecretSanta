@@ -1,9 +1,9 @@
 const statusLine = document.getElementById("statusLine");
 const joinForm = document.getElementById("joinForm");
-const lookupForm = document.getElementById("lookupForm");
-const hostForm = document.getElementById("hostForm");
 const result = document.getElementById("result");
 const errorBox = document.getElementById("error");
+const nameList = document.getElementById("nameList");
+const emptyRoster = document.getElementById("emptyRoster");
 
 function showError(message) {
   errorBox.hidden = !message;
@@ -13,23 +13,14 @@ function showError(message) {
   }
 }
 
-function showTicket({ status, matchName }) {
+function showEnrolled(name) {
   result.hidden = false;
-  if (status === "paired") {
-    result.innerHTML = `
-      <article class="ticket paired">
-        <p>You are buying for</p>
-        <h3>${escapeHtml(matchName)}</h3>
-      </article>
-    `;
-  } else {
-    result.innerHTML = `
-      <article class="ticket waiting">
-        <p>You're in the hat</p>
-        <h3>Matching comes later</h3>
-      </article>
-    `;
-  }
+  result.innerHTML = `
+    <article class="ticket waiting">
+      <p>You're in the hat</p>
+      <h3>${escapeHtml(name)}</h3>
+    </article>
+  `;
   result.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
 
@@ -49,11 +40,22 @@ async function readJson(response) {
   return data;
 }
 
+function renderNames(names) {
+  nameList.replaceChildren();
+  emptyRoster.hidden = names.length > 0;
+  names.forEach((name) => {
+    const item = document.createElement("li");
+    item.textContent = name;
+    nameList.append(item);
+  });
+}
+
 async function refreshStatus() {
   try {
     const data = await readJson(await fetch("/api/status"));
     const phase = data.drawn ? "matches are ready" : "collecting names";
     statusLine.textContent = `${data.count} of ${data.max} names · ${phase}`;
+    renderNames(data.names || []);
     const closed = data.drawn || data.count >= data.max;
     joinForm.querySelector("button").disabled = closed;
     joinForm.querySelector("button").textContent = data.drawn
@@ -66,86 +68,20 @@ async function refreshStatus() {
   }
 }
 
-function formPayload(form) {
-  const body = new FormData(form);
-  return {
-    name: String(body.get("name") || ""),
-    pin: String(body.get("pin") || ""),
-  };
-}
-
-function setTab(name) {
-  document.querySelectorAll(".tab").forEach((tab) => {
-    const on = tab.dataset.tab === name;
-    tab.classList.toggle("is-active", on);
-    tab.setAttribute("aria-selected", on ? "true" : "false");
-  });
-  document.querySelectorAll(".panel").forEach((panel) => {
-    panel.classList.toggle("is-active", panel.dataset.panel === name);
-  });
-}
-
-document.querySelectorAll(".tab").forEach((tab) => {
-  tab.addEventListener("click", () => setTab(tab.dataset.tab));
-});
-
 joinForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   showError("");
+  const name = String(new FormData(joinForm).get("name") || "").trim();
   try {
-    const data = await readJson(
+    await readJson(
       await fetch("/api/join", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formPayload(joinForm)),
+        body: JSON.stringify({ name }),
       })
     );
-    showTicket(data);
-    await refreshStatus();
-  } catch (err) {
-    showError(err.message);
-  }
-});
-
-lookupForm.addEventListener("submit", async (event) => {
-  event.preventDefault();
-  showError("");
-  try {
-    const data = await readJson(
-      await fetch("/api/lookup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formPayload(lookupForm)),
-      })
-    );
-    showTicket(data);
-  } catch (err) {
-    showError(err.message);
-  }
-});
-
-hostForm.addEventListener("submit", async (event) => {
-  event.preventDefault();
-  showError("");
-  const action = event.submitter && event.submitter.value === "reset" ? "reset" : "draw";
-  const secret = String(new FormData(hostForm).get("secret") || "");
-  try {
-    const data = await readJson(
-      await fetch(`/api/${action}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-admin-secret": secret,
-        },
-        body: JSON.stringify({ secret }),
-      })
-    );
-    result.hidden = false;
-    result.innerHTML =
-      action === "reset"
-        ? `<article class="ticket waiting"><p>Host</p><h3>Draw cleared</h3></article>`
-        : `<article class="ticket paired"><p>Host</p><h3>Matched ${data.count} people</h3></article>`;
-    result.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    joinForm.reset();
+    showEnrolled(name);
     await refreshStatus();
   } catch (err) {
     showError(err.message);
