@@ -5,7 +5,8 @@
   "description": "Collect names, then draw Secret Santa matches for up to 30 people",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "migrate": "npx supabase db push --linked"
   },
   "engines": {
     "node": ">=18"
@@ -15,5 +16,8 @@
     "@vercel/analytics": "^2.0.1",
     "dotenv": "^18.0.9",
     "express": "^4.21.2"
+  },
+  "devDependencies": {
+    "supabase": "2.122.0"
   }
 }
