@@ -399,3 +399,264 @@ button.secondary {
     transition: none !important;
   }
 }
+
+[hidden] {
+  display: none !important;
+}
+
+.stage {
+  width: min(860px, 100%);
+  padding: max(16px, env(safe-area-inset-top, 0px)) 14px calc(32px + env(safe-area-inset-bottom, 0px));
+}
+
+.mast h1,
+.mast .lede {
+  text-wrap: balance;
+}
+
+.mast .lede {
+  max-width: 30rem;
+}
+
+.hat {
+  width: 116px;
+  margin-bottom: 24px;
+}
+
+.hat-crown {
+  height: 52px;
+}
+
+.draw-app {
+  order: 2;
+  width: 100%;
+}
+
+.tab-list {
+  display: flex;
+  gap: 4px;
+  width: 100%;
+  margin-bottom: 12px;
+  padding: 5px;
+  background: rgba(5, 20, 16, 0.7);
+  border: 1px solid rgba(201, 161, 91, 0.26);
+}
+
+.tab-button {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 46px;
+  margin: 0;
+  padding: 10px 7px;
+  background: transparent;
+  color: #e5dbc7;
+  font-size: 0.9rem;
+  line-height: 1.15;
+  touch-action: manipulation;
+}
+
+.tab-button:hover:not(:disabled) {
+  background: rgba(243, 234, 214, 0.08);
+  filter: none;
+}
+
+.tab-button.is-active {
+  background: var(--gold);
+  color: var(--deep);
+}
+
+.tab-button:disabled {
+  background: transparent;
+  color: #a79d8b;
+  opacity: 0.52;
+  cursor: not-allowed;
+}
+
+.tab-button:focus-visible,
+.tab-panel:focus-visible {
+  outline: 2px solid var(--cream);
+  outline-offset: 3px;
+}
+
+.tab-panel {
+  min-width: 0;
+  padding: 18px 16px;
+  background: rgba(12, 36, 30, 0.74);
+  border: 1px solid rgba(201, 161, 91, 0.28);
+}
+
+.roster-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 10px;
+}
+
+.panel-kicker {
+  margin: 0 0 4px;
+  color: var(--gold);
+  font: 500 0.7rem/1.4 "IBM Plex Mono", monospace;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.roster-heading h2,
+.match-card h2,
+.entry-panel h2 {
+  margin: 0;
+  font: 500 1.55rem/1.15 "Fraunces", serif;
+  text-wrap: balance;
+}
+
+.panel-note {
+  margin: 5px 0 0;
+  color: #d8ccb4;
+  font-size: 0.92rem;
+}
+
+.roster-count {
+  display: grid;
+  flex: 0 0 48px;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  border: 1px solid rgba(201, 161, 91, 0.6);
+  border-radius: 50%;
+  color: var(--gold);
+  font: 500 1.15rem/1 "IBM Plex Mono", monospace;
+}
+
+.name-list {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 14px;
+}
+
+.name-list li {
+  min-width: 0;
+  padding: 11px 3px;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid rgba(201, 161, 91, 0.2);
+  font-size: 1rem;
+  overflow-wrap: anywhere;
+}
+
+.empty-roster,
+.match-empty {
+  margin: 18px 0 4px;
+  color: #e1d6c1;
+  text-align: center;
+}
+
+.match-panel {
+  display: grid;
+  gap: 16px;
+}
+
+.match-card {
+  width: 100%;
+  margin: 0;
+  padding: 18px 16px;
+}
+
+.match-card h2 {
+  margin-bottom: 8px;
+}
+
+.match-card .host-copy {
+  margin: 0 0 16px;
+  line-height: 1.45;
+}
+
+.match-card label {
+  margin-bottom: 6px;
+  color: var(--cream);
+  font-weight: 600;
+}
+
+.match-card select {
+  min-height: 52px;
+  margin: 0;
+  padding-right: 38px;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--gold) 50%),
+    linear-gradient(135deg, var(--gold) 50%, transparent 50%);
+  background-position:
+    calc(100% - 18px) 50%,
+    calc(100% - 12px) 50%;
+  background-size: 6px 6px;
+  background-repeat: no-repeat;
+  letter-spacing: 0;
+}
+
+.match-card button {
+  min-height: 52px;
+  margin-top: 12px;
+}
+
+.result {
+  margin: 0;
+}
+
+.ticket {
+  width: min(100%, 440px);
+}
+
+.ticket-owner {
+  margin-top: 15px !important;
+  padding-top: 12px;
+  border-top: 1px solid rgba(26, 22, 18, 0.16);
+  color: var(--muted) !important;
+  letter-spacing: 0.02em !important;
+  text-transform: none !important;
+}
+
+.entry-panel p:last-child {
+  margin-bottom: 0;
+  color: #d8ccb4;
+}
+
+@media (min-width: 701px) {
+  .stage {
+    padding: 40px 20px 72px;
+  }
+
+  .hat {
+    width: 170px;
+    margin-bottom: 34px;
+  }
+
+  .hat-crown {
+    height: 72px;
+  }
+
+  .tab-list {
+    gap: 6px;
+    margin-bottom: 16px;
+  }
+
+  .tab-button {
+    min-height: 50px;
+    font-size: 0.98rem;
+  }
+
+  .tab-panel {
+    padding: 24px 28px;
+  }
+
+  .roster-heading h2,
+  .match-card h2,
+  .entry-panel h2 {
+    font-size: 1.8rem;
+  }
+
+  .name-list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0 22px;
+  }
+
+  .match-card {
+    padding: 24px;
+  }
+}

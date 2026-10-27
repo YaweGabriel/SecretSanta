@@ -144,22 +144,33 @@ async function listUnmatchedPeople() {
   return data || [];
 }
 
+async function listDrawRoster() {
+  const { data, error } = await supabase.rpc("list_draw_roster");
+  if (error) {
+    throw error;
+  }
+  return data || [];
+}
+
 app.get("/api/status", (req, res) => {
   const sessionHash = hashSession(sessionToken(req, res));
   enqueue(async () => {
-    const [draw, people, sessionResult] = await Promise.all([
+    const [draw, available, roster, sessionResult] = await Promise.all([
       getDraw(),
       listUnmatchedPeople(),
+      listDrawRoster(),
       supabase.rpc("get_session_match", { p_session_hash: sessionHash }),
     ]);
     if (sessionResult.error) {
       throw sessionResult.error;
     }
     return res.json({
-      remaining: people.length,
+      remaining: available.length,
+      total: roster.length,
       max: MAX_PEOPLE,
       drawn: Boolean(draw.drawn),
-      names: draw.drawn ? [] : people.map(({ id, name }) => ({ id, name })),
+      names: roster.map(({ id, name }) => ({ id, name })),
+      availableNames: draw.drawn ? [] : available.map(({ id, name }) => ({ id, name })),
       sessionMatch: sessionResult.data,
     });
   }).catch((err) => {

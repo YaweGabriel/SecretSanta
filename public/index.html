@@ -18,9 +18,9 @@
   <body>
     <div class="stage">
       <header class="mast">
-        <p class="eyebrow" id="statusLine">Loading the hat…</p>
+        <p class="eyebrow" id="statusLine">Loading the draw…</p>
         <h1>Names in a hat</h1>
-        <p class="lede">Add your Full Name to the draw ). Matching happens later.</p>
+        <p class="lede">Everyone in the draw, gathered in one place.</p>
       </header>
 
       <div class="hat" aria-hidden="true">
@@ -31,33 +31,50 @@
         </div>
       </div>
 
-      <div id="result" class="result" hidden></div>
-      <p id="error" class="error" hidden></p>
+      <main class="draw-app">
+        <div class="tab-list" role="tablist" aria-label="Secret Santa draw">
+          <button class="tab-button is-active" id="rosterTab" type="button" role="tab" aria-selected="true" aria-controls="rosterPanel" tabindex="0">Roster</button>
+          <button class="tab-button" id="matchTab" type="button" role="tab" aria-selected="false" aria-controls="matchPanel" tabindex="-1">Get a match</button>
+          <button class="tab-button is-disabled" id="entryTab" type="button" role="tab" aria-selected="false" aria-controls="entryPanel" aria-disabled="true" disabled tabindex="-1">Enter the draw</button>
+        </div>
 
-      <section class="panel is-active" aria-labelledby="joinHeading">
-        <h2 id="joinHeading">Join the draw</h2>
-        <form id="joinForm">
-          <label>
-            Your name
-            <input
-              name="name"
-              type="text"
-              maxlength="80"
-              autocomplete="name"
-              autocapitalize="words"
-              enterkeyhint="done"
-              required
-            />
-          </label>
-          <button type="submit">Put my name in</button>
-        </form>
-      </section>
+        <section class="tab-panel roster-panel" id="rosterPanel" role="tabpanel" aria-labelledby="rosterTab" tabindex="0">
+          <div class="roster-heading">
+            <div>
+              <p class="panel-kicker">The guest list</p>
+              <h2>In the draw</h2>
+              <p class="panel-note" id="rosterSummary">Loading names...</p>
+            </div>
+            <span class="roster-count" id="rosterCount" aria-label="People in the draw">-</span>
+          </div>
+          <ol id="nameList" class="name-list" aria-live="polite"></ol>
+          <p id="emptyRoster" class="empty-roster" hidden>No names have been added to the draw yet.</p>
+        </section>
 
-      <section class="roster" aria-live="polite">
-        <h2>In the hat</h2>
-        <ol id="nameList" class="name-list"></ol>
-        <p id="emptyRoster" class="empty-roster">No names yet. Be the first.</p>
-      </section>
+        <section class="tab-panel match-panel" id="matchPanel" role="tabpanel" aria-labelledby="matchTab" tabindex="0" hidden>
+          <div class="panel match-card">
+            <p class="panel-kicker">Your turn</p>
+            <h2>Pick your name</h2>
+            <p class="host-copy">Choose your name once to find the person you are giving a gift to.</p>
+            <form id="matchForm">
+              <label for="participantSelect">Your name</label>
+              <select name="personId" id="participantSelect" required>
+                <option value="" selected disabled>Loading names...</option>
+              </select>
+              <button type="submit" disabled>Match me</button>
+            </form>
+            <p id="error" class="error" role="alert" hidden></p>
+          </div>
+          <div id="result" class="result" aria-live="polite" hidden></div>
+          <p class="match-empty" id="matchEmpty" hidden>Everyone has already found a match.</p>
+        </section>
+
+        <section class="tab-panel entry-panel" id="entryPanel" role="tabpanel" aria-labelledby="entryTab" tabindex="0" hidden>
+          <p class="panel-kicker">Entry closed</p>
+          <h2>Ask the host to add a name</h2>
+          <p>Names are managed by the draw host.</p>
+        </section>
+      </main>
     </div>
     <script src="/app.js"></script>
   </body>
