@@ -11,6 +11,45 @@ const rosterCount = document.getElementById("rosterCount");
 const matchEmpty = document.getElementById("matchEmpty");
 const tabs = [...document.querySelectorAll('[role="tab"]:not(:disabled)')];
 const panels = [...document.querySelectorAll('[role="tabpanel"]')];
+const basketId = location.pathname.match(/^\/b\/([A-Za-z0-9_-]{10})\/?$/)?.[1]
+  || new URLSearchParams(location.search).get("basket");
+const createPanel = document.getElementById("createPanel");
+const joinPanel = document.getElementById("joinPanel");
+const sharePanel = document.getElementById("sharePanel");
+const drawTabs = document.getElementById("drawTabs");
+const basketTools = document.getElementById("basketTools");
+const launchButton = document.getElementById("launchButton");
+document.getElementById("refreshButton").addEventListener("click", refreshStatus);
+
+function displayBasket() {
+  createPanel.hidden = true;
+  joinPanel.hidden = false;
+}
+
+function enableDraw(data) {
+  const joined = sessionStorage.getItem(`santa-joined-${basketId}`) === "1";
+  const created = new URLSearchParams(location.search).has("created");
+  joinPanel.hidden = data.launched || joined || created;
+  drawTabs.hidden = !data.launched && !joined && !created;
+  basketTools.hidden = false;
+  document.getElementById("basketMeta").textContent = `${data.basket.hostName}’s basket · ${data.total} of ${data.basket.capacity} joined`;
+  document.getElementById("lede").textContent = data.launched
+    ? `A Secret Santa hosted by ${data.basket.hostName}.`
+    : `Join ${data.basket.hostName}’s basket and add your name before the draw launches.`;
+  const secret = sessionStorage.getItem(`santa-host-${basketId}`);
+  const full = data.total >= data.basket.capacity;
+  launchButton.hidden = !secret || data.launched;
+  launchButton.disabled = !full;
+  launchButton.textContent = full ? "Launch the draw" : `Waiting for ${data.basket.capacity - data.total} more`;
+  document.getElementById("joinCopy").textContent = data.launched
+    ? `${data.basket.hostName} has launched the draw.`
+    : full
+      ? `This basket is full. ${data.basket.hostName} can launch the draw now.`
+      : `${data.basket.hostName} is hosting. ${data.total} of ${data.basket.capacity} places filled.`;
+  document.getElementById("joinHeading").textContent = data.launched ? "The draw is open" : full ? "Basket is full" : "Join the basket";
+  document.getElementById("joinForm").hidden = data.launched || joined || full;
+  if (data.launched) statusLine.textContent = data.drawn ? "All matches are complete" : "The draw is open";
+}
 
 function activateTab(tab, focus = false) {
   const panelId = tab.getAttribute("aria-controls");
@@ -88,8 +127,18 @@ function renderAvailableNames(names) {
 }
 
 async function refreshStatus() {
+  if (!basketId) return;
   try {
-    const data = await readJson(await fetch("/api/status"));
+    const data = await readJson(await fetch(`/api/status?basket=${encodeURIComponent(basketId)}`));
+    enableDraw(data);
+    if (!data.launched) {
+      statusLine.textContent = data.total === data.basket.capacity
+        ? "All places filled · waiting for host"
+        : `Waiting for ${data.basket.capacity - data.total} more people`;
+      rosterSummary.textContent = `${data.total} of ${data.basket.capacity} places filled`;
+      renderRoster(data.names || []);
+      return;
+    }
     const names = data.names || [];
     const availableNames = data.availableNames || [];
     statusLine.textContent = data.drawn
@@ -148,7 +197,7 @@ matchForm.addEventListener("submit", async (event) => {
       await fetch("/api/match", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ personId }),
+        body: JSON.stringify({ personId, basket: basketId }),
       })
     );
     participantSelect.value = "";
@@ -161,4 +210,58 @@ matchForm.addEventListener("submit", async (event) => {
   }
 });
 
+document.getElementById("createForm").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const button = form.querySelector("button");
+  button.disabled = true;
+  try {
+    const data = await readJson(await fetch("/api/baskets", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(Object.fromEntries(new FormData(form))) }));
+    sessionStorage.setItem(`santa-host-${data.publicCode}`, data.hostSecret);
+    location.href = `/b/${encodeURIComponent(data.publicCode)}?created=1`;
+  } catch (err) {
+    const box = document.getElementById("createError"); box.hidden = false; box.textContent = err.message; button.disabled = false;
+  }
+});
+
+document.getElementById("joinForm").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const button = form.querySelector("button"); button.disabled = true;
+  try {
+    await readJson(await fetch("/api/join", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ basket: basketId, name: new FormData(form).get("name") }) }));
+    sessionStorage.setItem(`santa-joined-${basketId}`, "1");
+    await refreshStatus();
+  } catch (err) {
+    const box = document.getElementById("joinError"); box.hidden = false; box.textContent = err.message; button.disabled = false;
+  }
+});
+
+launchButton.addEventListener("click", async () => {
+  launchButton.disabled = true;
+  try {
+    await readJson(await fetch("/api/launch", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ basket: basketId, hostSecret: sessionStorage.getItem(`santa-host-${basketId}`) }) }));
+    await refreshStatus();
+  } catch (err) {
+    const box = document.getElementById("launchError"); box.hidden = false; box.textContent = err.message; launchButton.disabled = false;
+  }
+});
+
+document.getElementById("copyLink").addEventListener("click", async () => {
+  try { await navigator.clipboard.writeText(document.getElementById("shareLink").value); document.getElementById("copyLink").textContent = "Invite link copied"; }
+  catch { document.getElementById("shareError").textContent = "Copy isn’t available here. Select and copy the link above."; document.getElementById("shareError").hidden = false; }
+});
+
+if (!basketId) {
+  statusLine.textContent = "Start a new draw";
+  createPanel.hidden = false;
+  document.getElementById("rosterPanel").hidden = true;
+}
+else {
+  displayBasket();
+  if (new URLSearchParams(location.search).has("created")) {
+    joinPanel.hidden = true; sharePanel.hidden = false;
+    document.getElementById("shareLink").value = `${location.origin}/b/${encodeURIComponent(basketId)}`;
+  }
+}
 refreshStatus();

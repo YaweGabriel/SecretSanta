@@ -2,11 +2,12 @@
   "name": "secret-santa",
   "version": "1.0.0",
   "private": true,
-  "description": "Collect names, then draw Secret Santa matches for up to 30 people",
+  "description": "Host shareable Secret Santa draws for groups of up to 50 people",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "migrate": "npx supabase db push --linked"
+    "migrate": "npx supabase db push --linked",
+    "load:baskets": "node scripts/load-test-baskets.js"
   },
   "engines": {
     "node": ">=18"

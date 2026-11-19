@@ -20,7 +20,7 @@
       <header class="mast">
         <p class="eyebrow" id="statusLine">Loading the draw…</p>
         <h1>Names in a hat</h1>
-        <p class="lede">Everyone in the draw, gathered in one place.</p>
+        <p class="lede" id="lede">Host a basket, invite your group, and draw names together.</p>
       </header>
 
       <div class="hat" aria-hidden="true">
@@ -32,10 +32,32 @@
       </div>
 
       <main class="draw-app">
-        <div class="tab-list" role="tablist" aria-label="Secret Santa draw">
+        <section id="createPanel" class="tab-panel create-panel" hidden>
+          <p class="panel-kicker">Start a basket</p>
+          <h2>Host a Secret Santa</h2>
+          <p class="host-copy">Choose the number of participants. Your host name is not counted unless you join separately.</p>
+          <form id="createForm">
+            <label for="hostName">Host name</label><input id="hostName" name="hostName" maxlength="80" required autocomplete="name" placeholder="e.g. Alex" />
+            <label for="capacity">Number of participants, excluding the host</label><input id="capacity" class="participant-count" name="capacity" type="number" min="2" max="50" step="1" value="10" required inputmode="numeric" />
+            <button type="submit">Create basket</button>
+          </form>
+          <p id="createError" class="error" role="alert" hidden></p>
+        </section>
+        <section id="joinPanel" class="tab-panel create-panel" hidden>
+          <p class="panel-kicker">You’re invited</p><h2 id="joinHeading">Join the basket</h2>
+          <p class="host-copy" id="joinCopy">Add your name to take part.</p>
+          <form id="joinForm"><label for="joinName">Your name</label><input id="joinName" name="name" maxlength="80" required autocomplete="name" placeholder="e.g. Sam" /><button type="submit">Join the draw</button></form>
+          <p id="joinError" class="error" role="alert" hidden></p>
+        </section>
+        <section id="sharePanel" class="tab-panel create-panel" hidden>
+          <p class="panel-kicker">Basket is ready</p><h2>Invite your group</h2><p>Share this link so everyone can add their name.</p>
+          <label for="shareLink">Basket link</label><input id="shareLink" readonly /><button id="copyLink" type="button">Copy invite link</button>
+          <p id="shareError" class="error" role="alert" hidden></p>
+        </section>
+        <div id="basketTools" class="basket-tools" hidden><p id="basketMeta"></p><button id="refreshButton" class="secondary" type="button">Refresh basket</button><button id="launchButton" type="button">Launch the draw</button><p id="launchError" class="error" role="alert" hidden></p></div>
+        <div class="tab-list" id="drawTabs" role="tablist" aria-label="Secret Santa draw" hidden>
           <button class="tab-button is-active" id="rosterTab" type="button" role="tab" aria-selected="true" aria-controls="rosterPanel" tabindex="0">Roster</button>
           <button class="tab-button" id="matchTab" type="button" role="tab" aria-selected="false" aria-controls="matchPanel" tabindex="-1">Get a match</button>
-          <button class="tab-button is-disabled" id="entryTab" type="button" role="tab" aria-selected="false" aria-controls="entryPanel" aria-disabled="true" disabled tabindex="-1">Enter the draw</button>
         </div>
 
         <section class="tab-panel roster-panel" id="rosterPanel" role="tabpanel" aria-labelledby="rosterTab" tabindex="0">
@@ -53,7 +75,7 @@
 
         <section class="tab-panel match-panel" id="matchPanel" role="tabpanel" aria-labelledby="matchTab" tabindex="0" hidden>
           <div class="panel match-card">
-            <p class="panel-kicker">Your turn</p>
+          <p class="panel-kicker">Your turn</p>
             <h2>Pick your name</h2>
             <p class="host-copy">Choose your name once to find the person you are giving a gift to.(Please Pick only your name )</p>
             <form id="matchForm">
@@ -69,11 +91,6 @@
           <p class="match-empty" id="matchEmpty" hidden>Everyone has already found a match.</p>
         </section>
 
-        <section class="tab-panel entry-panel" id="entryPanel" role="tabpanel" aria-labelledby="entryTab" tabindex="0" hidden>
-          <p class="panel-kicker">Entry closed</p>
-          <h2>Ask the host to add a name</h2>
-          <p>Names are managed by the draw host.</p>
-        </section>
       </main>
     </div>
     <script src="/app.js"></script>

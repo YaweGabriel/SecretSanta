@@ -617,6 +617,29 @@ button.secondary {
   color: #d8ccb4;
 }
 
+.create-panel h2 {
+  margin: 0 0 8px;
+  font: 500 1.8rem/1.15 "Fraunces", serif;
+  text-wrap: balance;
+}
+
+.create-panel .host-copy,
+.create-panel > p:not(.panel-kicker):not(.error) {
+  max-width: 38rem;
+  color: #d8ccb4;
+}
+
+.create-panel form label { margin: 16px 0 6px; color: var(--cream); font-weight: 600; }
+.create-panel input,
+.create-panel select { margin: 0; letter-spacing: 0; }
+.create-panel input[type="number"] { appearance: auto; -webkit-appearance: auto; }
+.create-panel button { margin-top: 12px; }
+.basket-tools { margin: 0 0 14px; padding: 14px 16px; border: 1px solid rgba(201, 161, 91, 0.28); background: rgba(12, 36, 30, 0.74); }
+.basket-tools > p:first-child { margin: 0; color: #e5dbc7; }
+.basket-tools .error { text-align: left; }
+.basket-tools button { width: auto; min-width: 190px; }
+.basket-tools button.secondary { margin-right: 8px; }
+
 @media (min-width: 701px) {
   .stage {
     padding: 40px 20px 72px;
