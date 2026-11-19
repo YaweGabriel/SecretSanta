@@ -20,6 +20,7 @@ const drawTabs = document.getElementById("drawTabs");
 const basketTools = document.getElementById("basketTools");
 const launchButton = document.getElementById("launchButton");
 const hostAccessPanel = document.getElementById("hostAccessPanel");
+const hostView = new URLSearchParams(location.search).has("hostView");
 document.getElementById("refreshButton").addEventListener("click", refreshStatus);
 
 function displayBasket() {
@@ -39,9 +40,9 @@ function enableDraw(data) {
     : `Join ${data.basket.hostName}’s basket and add your name before the draw launches.`;
   const legacyHostAccess = sessionStorage.getItem(`santa-host-${basketId}`);
   const hostAccess = Boolean(data.basket.hostAccess || legacyHostAccess);
-  hostAccessPanel.hidden = hostAccess || !data.basket.hasHostPin;
+  hostAccessPanel.hidden = hostView || hostAccess || !data.basket.hasHostPin;
   const full = data.total >= data.basket.capacity;
-  launchButton.hidden = !hostAccess || data.launched;
+  launchButton.hidden = hostView || !hostAccess || data.launched;
   launchButton.disabled = !full;
   launchButton.textContent = full ? "Launch the draw" : `Waiting for ${data.basket.capacity - data.total} more`;
   document.getElementById("joinCopy").textContent = data.launched
@@ -132,7 +133,7 @@ function renderAvailableNames(names) {
 async function refreshStatus() {
   if (!basketId) return;
   try {
-    const data = await readJson(await fetch(`/api/status?basket=${encodeURIComponent(basketId)}`));
+    const data = await readJson(await fetch(`/api/status?basket=${encodeURIComponent(basketId)}${hostView ? "&hostView=1" : ""}`));
     enableDraw(data);
     if (!data.launched) {
       statusLine.textContent = data.total === data.basket.capacity
@@ -148,6 +149,14 @@ async function refreshStatus() {
       ? "All matches are complete"
       : `${data.total} ${data.total === 1 ? "person" : "people"} in the draw`;
     renderRoster(names);
+    if (hostView) {
+      drawTabs.hidden = true;
+      document.getElementById("matchPanel").hidden = true;
+      document.getElementById("rosterPanel").hidden = false;
+      result.hidden = true;
+      matchForm.hidden = true;
+      return;
+    }
     renderAvailableNames(availableNames);
     const sessionMatch = data.sessionMatch || {};
     if (sessionMatch.matched) {
@@ -280,6 +289,7 @@ document.getElementById("copyLink").addEventListener("click", async () => {
 if (!basketId) {
   statusLine.textContent = "Start a new draw";
   createPanel.hidden = false;
+  document.getElementById("hostLookupPanel").hidden = false;
   document.getElementById("rosterPanel").hidden = true;
 }
 else {
@@ -291,3 +301,41 @@ else {
   }
 }
 refreshStatus();
+
+document.getElementById("showHostLookup").addEventListener("click", (event) => {
+  const lookup = document.getElementById("hostLookup");
+  lookup.hidden = !lookup.hidden;
+  event.currentTarget.textContent = lookup.hidden ? "View Basket" : "Close basket lookup";
+});
+
+document.getElementById("hostLookupForm").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const button = form.querySelector("button");
+  const error = document.getElementById("hostLookupError");
+  const list = document.getElementById("hostBasketList");
+  error.hidden = true;
+  list.replaceChildren();
+  button.disabled = true;
+  try {
+    const data = await readJson(await fetch("/api/host/baskets", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(Object.fromEntries(new FormData(form))),
+    }));
+    data.baskets.forEach((basket) => {
+      const item = document.createElement("li");
+      const link = document.createElement("a");
+      link.href = `/b/${encodeURIComponent(basket.publicCode)}?hostView=1`;
+      link.textContent = `${basket.hostName}’s basket · ${basket.total} of ${basket.capacity} joined`;
+      item.append(link);
+      list.append(item);
+    });
+    form.reset();
+  } catch (err) {
+    error.textContent = err.message;
+    error.hidden = false;
+  } finally {
+    button.disabled = false;
+  }
+});

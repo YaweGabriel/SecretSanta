@@ -35,6 +35,19 @@
       </div>
 
       <main class="draw-app">
+        <section id="hostLookupPanel" class="tab-panel create-panel" hidden>
+          <button id="showHostLookup" class="secondary" type="button">View Basket</button>
+          <div id="hostLookup" class="host-access-body" hidden>
+            <p>Enter the host email and 4-digit PIN you used when creating a basket.</p>
+            <form id="hostLookupForm">
+              <label for="lookupEmail">Host email</label><input id="lookupEmail" name="hostEmail" type="email" maxlength="254" required autocomplete="email" />
+              <label for="lookupPin">4-digit PIN</label><input id="lookupPin" name="hostPin" type="password" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" required autocomplete="current-password" />
+              <button type="submit">Find my baskets</button>
+            </form>
+            <p id="hostLookupError" class="error" role="alert" hidden></p>
+            <ul id="hostBasketList" class="name-list" aria-live="polite"></ul>
+          </div>
+        </section>
         <section id="createPanel" class="tab-panel create-panel" hidden>
           <p class="panel-kicker">Start a basket</p>
           <h2>Host a Secret Santa</h2>

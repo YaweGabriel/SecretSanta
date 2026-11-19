@@ -195,6 +195,9 @@ body {
   font-size: 1.05rem;
 }
 
+#hostBasketList a { color: var(--gold); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+#hostBasketList a:hover { color: var(--cream); }
+
 .empty-roster {
   margin: 0;
   color: #d8ccb4;
