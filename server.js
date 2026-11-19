@@ -167,6 +167,7 @@ function validBasketRef(value) {
 
 app.get("/api/status", (req, res) => {
   const basketRef = String(req.query.basket || "");
+  const hostView = req.query.hostView === "1";
   if (!validBasketRef(basketRef)) return res.status(400).json({ error: "Choose a valid basket." });
   const sessionHash = hashSession(sessionToken(req, res));
   runAsync(async () => {
@@ -191,7 +192,7 @@ app.get("/api/status", (req, res) => {
       launched: Boolean(basket.launched),
       names: roster.map(({ id, name }) => ({ id, name })),
       availableNames: basket.drawn || !basket.launched ? [] : available.map(({ id, name }) => ({ id, name })),
-      sessionMatch: sessionResult.data,
+      sessionMatch: hostView ? null : sessionResult.data,
     });
   }).catch((err) => {
     const mapped = dbError(err);
@@ -295,6 +296,30 @@ app.post("/api/host/verify", (req, res) => {
       return res.status(403).json({ error: "That email and PIN don’t match this basket." });
     }
     return res.json({ ok: true });
+  }).catch((err) => { const mapped = dbError(err); res.status(mapped.status).json({ error: mapped.error }); });
+});
+
+app.post("/api/host/baskets", (req, res) => {
+  const sessionHash = hashSession(sessionToken(req, res));
+  runAsync(async () => {
+    const hostEmail = String((req.body && req.body.hostEmail) || "").trim().toLowerCase();
+    const hostPin = String((req.body && req.body.hostPin) || "").trim();
+    if (hostEmail.length > 254 || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(hostEmail) || !/^\\d{4}$/.test(hostPin)) {
+      return res.status(400).json({ error: "Enter the host email and 4-digit PIN." });
+    }
+    const { data, error } = await supabase.rpc("list_host_baskets", {
+      p_host_email: hostEmail,
+      p_host_pin: hostPin,
+      p_session_hash: sessionHash,
+    });
+    if (error) { const mapped = dbError(error); return res.status(mapped.status).json({ error: mapped.error }); }
+    if (data && data.error === "PIN_RATE_LIMITED") {
+      return res.status(429).json({ error: "Too many PIN attempts. Please wait 15 minutes and try again." });
+    }
+    if (!Array.isArray(data) || !data.length) {
+      return res.status(403).json({ error: "No baskets match that email and PIN." });
+    }
+    return res.json({ baskets: data });
   }).catch((err) => { const mapped = dbError(err); res.status(mapped.status).json({ error: mapped.error }); });
 });
 
