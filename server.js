@@ -10,6 +10,7 @@ const MAX_PEOPLE = 50;
 const BASKET_CODE_PATTERN = /^[a-z0-9]{10}$/;
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const BASKET_CODE_ALPHABET = "abcdefghjkmnpqrstuvwxyz23456789";
+const PUBLIC_APP_URL = (process.env.PUBLIC_APP_URL || "").replace(/\/+$/, "");
 const ADMIN_SECRET = process.env.ADMIN_SECRET || "";
 const SUPABASE_URL = process.env.SUPABASE_URL || "https://mfkvitmdctpcqrkdfsrj.supabase.co";
 const SUPABASE_KEY =
@@ -154,10 +155,10 @@ async function listDrawRoster(basketId) {
   return data || [];
 }
 
-function getBasketStatus(basketRef) {
+function getBasketStatus(basketRef, sessionHash) {
   return UUID_PATTERN.test(basketRef)
     ? supabase.rpc("basket_status", { p_basket_id: basketRef })
-    : supabase.rpc("basket_status_by_code", { p_public_code: basketRef });
+    : supabase.rpc("basket_status_by_code", { p_public_code: basketRef, p_session_hash: sessionHash });
 }
 
 function validBasketRef(value) {
@@ -169,7 +170,7 @@ app.get("/api/status", (req, res) => {
   if (!validBasketRef(basketRef)) return res.status(400).json({ error: "Choose a valid basket." });
   const sessionHash = hashSession(sessionToken(req, res));
   runAsync(async () => {
-    const basketResult = await getBasketStatus(basketRef);
+    const basketResult = await getBasketStatus(basketRef, sessionHash);
     if (basketResult.error) throw basketResult.error;
     if (!basketResult.data) return res.status(404).json({ error: "This basket link is no longer available." });
     const basket = basketResult.data;
@@ -208,7 +209,7 @@ app.post("/api/match", (req, res) => {
       return res.status(400).json({ error: "Choose a name from the list." });
     }
 
-    const basketResult = await getBasketStatus(basketRef);
+    const basketResult = await getBasketStatus(basketRef, sessionHash);
     if (basketResult.error) { const mapped = dbError(basketResult.error); return res.status(mapped.status).json({ error: mapped.error }); }
     if (!basketResult.data) return res.status(404).json({ error: "This basket link is no longer available." });
 
@@ -235,21 +236,30 @@ app.post("/api/match", (req, res) => {
 app.post("/api/baskets", (req, res) => {
   runAsync(async () => {
     const hostName = String((req.body && req.body.hostName) || "").trim();
+    const hostEmail = String((req.body && req.body.hostEmail) || "").trim().toLowerCase();
+    const hostPin = String((req.body && req.body.hostPin) || "").trim();
     const capacity = Number(req.body && req.body.capacity);
     if (!hostName || hostName.length > 80 || !Number.isInteger(capacity) || capacity < 2 || capacity > MAX_PEOPLE) {
       return res.status(400).json({ error: "Add a host name and choose 2–50 participants." });
     }
+    if (hostEmail.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(hostEmail)) {
+      return res.status(400).json({ error: "Enter a valid host email address." });
+    }
+    if (!/^\d{4}$/.test(hostPin)) return res.status(400).json({ error: "Choose a 4-digit host PIN." });
     const sessionHash = hashSession(sessionToken(req, res));
-    const hostSecret = crypto.randomBytes(24).toString("base64url");
     let result;
     for (let attempt = 0; attempt < 3; attempt += 1) {
       const publicCode = Array.from(crypto.randomBytes(10), (byte) => BASKET_CODE_ALPHABET[byte % BASKET_CODE_ALPHABET.length]).join("");
+      const origin = PUBLIC_APP_URL || `${req.protocol}://${req.get("host")}`;
+      const storedLink = new URL(`/b/${publicCode}`, origin).toString();
       result = await supabase.rpc("create_basket", {
         p_host_name: hostName,
         p_capacity: capacity,
-        p_host_secret: hostSecret,
         p_session_hash: sessionHash,
         p_public_code: publicCode,
+        p_host_email: hostEmail,
+        p_host_pin: hostPin,
+        p_stored_link: storedLink,
       });
       if (!result.error || result.error.code !== "23505") break;
     }
@@ -258,7 +268,33 @@ app.post("/api/baskets", (req, res) => {
       const mapped = dbError(result.error);
       return res.status(mapped.status).json({ error: mapped.error });
     }
-    res.status(201).json({ ...result.data, hostSecret });
+    res.status(201).json(result.data);
+  }).catch((err) => { const mapped = dbError(err); res.status(mapped.status).json({ error: mapped.error }); });
+});
+
+app.post("/api/host/verify", (req, res) => {
+  const sessionHash = hashSession(sessionToken(req, res));
+  runAsync(async () => {
+    const basketCode = String((req.body && req.body.basket) || "");
+    const hostEmail = String((req.body && req.body.hostEmail) || "").trim().toLowerCase();
+    const hostPin = String((req.body && req.body.hostPin) || "").trim();
+    if (!BASKET_CODE_PATTERN.test(basketCode) || hostEmail.length > 254 || !/^\d{4}$/.test(hostPin)) {
+      return res.status(400).json({ error: "Enter the host email and 4-digit PIN." });
+    }
+    const { data, error } = await supabase.rpc("verify_basket_host", {
+      p_public_code: basketCode,
+      p_host_email: hostEmail,
+      p_host_pin: hostPin,
+      p_session_hash: sessionHash,
+    });
+    if (error) { const mapped = dbError(error); return res.status(mapped.status).json({ error: mapped.error }); }
+    if (data && data.error === "PIN_RATE_LIMITED") {
+      return res.status(429).json({ error: "Too many PIN attempts. Please wait 15 minutes and try again." });
+    }
+    if (data && data.error === "BAD_HOST_CREDENTIALS") {
+      return res.status(403).json({ error: "That email and PIN don’t match this basket." });
+    }
+    return res.json({ ok: true });
   }).catch((err) => { const mapped = dbError(err); res.status(mapped.status).json({ error: mapped.error }); });
 });
 
@@ -267,10 +303,10 @@ app.post("/api/join", (req, res) => {
     const basketRef = String((req.body && (req.body.basket || req.body.basketId)) || "");
     const name = String((req.body && req.body.name) || "").trim();
     if (!validBasketRef(basketRef) || !name || name.length > 80) return res.status(400).json({ error: "Enter your name to join." });
-    const basketResult = await getBasketStatus(basketRef);
+    const sessionHash = hashSession(sessionToken(req, res));
+    const basketResult = await getBasketStatus(basketRef, sessionHash);
     if (basketResult.error) { const mapped = dbError(basketResult.error); return res.status(mapped.status).json({ error: mapped.error }); }
     if (!basketResult.data) return res.status(404).json({ error: "This basket link is no longer available." });
-    const sessionHash = hashSession(sessionToken(req, res));
     const { data, error } = await supabase.rpc("join_basket", { p_basket_id: basketResult.data.id, p_name: name, p_session_hash: sessionHash });
     if (error) { const mapped = dbError(error); return res.status(mapped.status).json({ error: mapped.error }); }
     res.status(201).json(data);
@@ -280,12 +316,14 @@ app.post("/api/join", (req, res) => {
 app.post("/api/launch", (req, res) => {
   runAsync(async () => {
     const basketRef = String((req.body && (req.body.basket || req.body.basketId)) || "");
-    const secret = String((req.body && req.body.hostSecret) || "");
+    const legacySecret = String((req.body && req.body.hostSecret) || "");
     if (!validBasketRef(basketRef)) return res.status(400).json({ error: "Choose a valid basket." });
-    const basketResult = await getBasketStatus(basketRef);
+    const sessionHash = hashSession(sessionToken(req, res));
+    const basketResult = await getBasketStatus(basketRef, sessionHash);
     if (basketResult.error) { const mapped = dbError(basketResult.error); return res.status(mapped.status).json({ error: mapped.error }); }
     if (!basketResult.data) return res.status(404).json({ error: "This basket link is no longer available." });
-    const { data, error } = await supabase.rpc("launch_basket", { p_basket_id: basketResult.data.id, p_host_secret: secret });
+    const hostCredential = basketResult.data.hostAccess ? sessionHash : legacySecret;
+    const { data, error } = await supabase.rpc("launch_basket", { p_basket_id: basketResult.data.id, p_host_secret: hostCredential });
     if (error) { const mapped = dbError(error); return res.status(mapped.status).json({ error: mapped.error }); }
     res.json(data);
   }).catch((err) => { const mapped = dbError(err); res.status(mapped.status).json({ error: mapped.error }); });

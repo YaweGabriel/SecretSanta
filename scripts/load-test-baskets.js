@@ -64,6 +64,7 @@ async function main() {
       res.end(JSON.stringify({
         id: crypto.randomUUID(),
         publicCode: payload.p_public_code,
+        storedLink: payload.p_stored_link,
         hostName: payload.p_host_name,
         capacity: payload.p_capacity,
         total: 0,
@@ -104,7 +105,12 @@ async function main() {
         const response = await fetch(`${appUrl}/api/baskets`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ hostName: `Load host ${index}`, capacity: 10 }),
+          body: JSON.stringify({
+            hostName: `Load host ${index}`,
+            hostEmail: `load-host-${index}@example.test`,
+            hostPin: "1234",
+            capacity: 10,
+          }),
         });
         const body = await response.json();
         return { status: response.status, body, elapsedMs: performance.now() - requestStartedAt };
