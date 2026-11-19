@@ -19,6 +19,7 @@ const sharePanel = document.getElementById("sharePanel");
 const drawTabs = document.getElementById("drawTabs");
 const basketTools = document.getElementById("basketTools");
 const launchButton = document.getElementById("launchButton");
+const hostAccessPanel = document.getElementById("hostAccessPanel");
 document.getElementById("refreshButton").addEventListener("click", refreshStatus);
 
 function displayBasket() {
@@ -36,9 +37,11 @@ function enableDraw(data) {
   document.getElementById("lede").textContent = data.launched
     ? `A Secret Santa hosted by ${data.basket.hostName}.`
     : `Join ${data.basket.hostName}’s basket and add your name before the draw launches.`;
-  const secret = sessionStorage.getItem(`santa-host-${basketId}`);
+  const legacyHostAccess = sessionStorage.getItem(`santa-host-${basketId}`);
+  const hostAccess = Boolean(data.basket.hostAccess || legacyHostAccess);
+  hostAccessPanel.hidden = hostAccess || !data.basket.hasHostPin;
   const full = data.total >= data.basket.capacity;
-  launchButton.hidden = !secret || data.launched;
+  launchButton.hidden = !hostAccess || data.launched;
   launchButton.disabled = !full;
   launchButton.textContent = full ? "Launch the draw" : `Waiting for ${data.basket.capacity - data.total} more`;
   document.getElementById("joinCopy").textContent = data.launched
@@ -217,10 +220,32 @@ document.getElementById("createForm").addEventListener("submit", async (event) =
   button.disabled = true;
   try {
     const data = await readJson(await fetch("/api/baskets", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(Object.fromEntries(new FormData(form))) }));
-    sessionStorage.setItem(`santa-host-${data.publicCode}`, data.hostSecret);
+    sessionStorage.setItem(`santa-link-${data.publicCode}`, data.storedLink);
     location.href = `/b/${encodeURIComponent(data.publicCode)}?created=1`;
   } catch (err) {
     const box = document.getElementById("createError"); box.hidden = false; box.textContent = err.message; button.disabled = false;
+  }
+});
+
+document.getElementById("hostAccessForm").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const button = form.querySelector("button");
+  const error = document.getElementById("hostAccessError");
+  error.hidden = true;
+  button.disabled = true;
+  try {
+    await readJson(await fetch("/api/host/verify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ basket: basketId, ...Object.fromEntries(new FormData(form)) }),
+    }));
+    form.reset();
+    await refreshStatus();
+  } catch (err) {
+    error.textContent = err.message;
+    error.hidden = false;
+    button.disabled = false;
   }
 });
 
@@ -261,7 +286,8 @@ else {
   displayBasket();
   if (new URLSearchParams(location.search).has("created")) {
     joinPanel.hidden = true; sharePanel.hidden = false;
-    document.getElementById("shareLink").value = `${location.origin}/b/${encodeURIComponent(basketId)}`;
+    document.getElementById("shareLink").value = sessionStorage.getItem(`santa-link-${basketId}`)
+      || `${location.origin}/b/${encodeURIComponent(basketId)}`;
   }
 }
 refreshStatus();

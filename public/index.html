@@ -38,9 +38,11 @@
         <section id="createPanel" class="tab-panel create-panel" hidden>
           <p class="panel-kicker">Start a basket</p>
           <h2>Host a Secret Santa</h2>
-          <p class="host-copy">Choose the number of participants. Your host name is not counted unless you join separately.</p>
+          <p class="host-copy">Choose the number of participants. The host is not counted toward this number.</p>
           <form id="createForm">
             <label for="hostName">Host name</label><input id="hostName" name="hostName" maxlength="80" required autocomplete="name" placeholder="e.g. Alex" />
+            <label for="hostEmail">Host email</label><input id="hostEmail" name="hostEmail" type="email" maxlength="254" required autocomplete="email" placeholder="you@example.com" />
+            <label for="hostPin">Create a 4-digit host PIN</label><input id="hostPin" name="hostPin" type="password" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" required autocomplete="new-password" placeholder="4 digits" />
             <label for="capacity">Number of participants, excluding the host</label><input id="capacity" class="participant-count" name="capacity" type="number" min="2" max="50" step="1" value="10" required inputmode="numeric" />
             <button type="submit">Create basket</button>
           </form>
@@ -53,11 +55,23 @@
           <p id="joinError" class="error" role="alert" hidden></p>
         </section>
         <section id="sharePanel" class="tab-panel create-panel" hidden>
-          <p class="panel-kicker">Basket is ready</p><h2>Invite your group</h2><p>Share this link so everyone can add their name.</p>
+          <p class="panel-kicker">Basket is ready</p><h2>Invite your group</h2><p>Share this link so everyone can add their name. Use your email and PIN to regain host access on another visit.</p>
           <label for="shareLink">Basket link</label><input id="shareLink" readonly /><button id="copyLink" type="button">Copy invite link</button>
           <p id="shareError" class="error" role="alert" hidden></p>
         </section>
         <div id="basketTools" class="basket-tools" hidden><p id="basketMeta"></p><button id="refreshButton" class="secondary" type="button">Refresh basket</button><button id="launchButton" type="button">Launch the draw</button><p id="launchError" class="error" role="alert" hidden></p></div>
+        <details id="hostAccessPanel" class="host-access" hidden>
+          <summary>Host? Open basket controls</summary>
+          <div class="host-access-body">
+            <p>Enter the email and 4-digit PIN you used when creating this basket.</p>
+            <form id="hostAccessForm">
+              <label for="accessEmail">Host email</label><input id="accessEmail" name="hostEmail" type="email" maxlength="254" required autocomplete="email" />
+              <label for="accessPin">4-digit PIN</label><input id="accessPin" name="hostPin" type="password" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" required autocomplete="current-password" />
+              <button type="submit">Unlock host controls</button>
+            </form>
+            <p id="hostAccessError" class="error" role="alert" hidden></p>
+          </div>
+        </details>
         <div class="tab-list" id="drawTabs" role="tablist" aria-label="Secret Santa draw" hidden>
           <button class="tab-button is-active" id="rosterTab" type="button" role="tab" aria-selected="true" aria-controls="rosterPanel" tabindex="0">Roster</button>
           <button class="tab-button" id="matchTab" type="button" role="tab" aria-selected="false" aria-controls="matchPanel" tabindex="-1">Get a match</button>
