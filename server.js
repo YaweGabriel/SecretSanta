@@ -304,7 +304,7 @@ app.post("/api/host/baskets", (req, res) => {
   runAsync(async () => {
     const hostEmail = String((req.body && req.body.hostEmail) || "").trim().toLowerCase();
     const hostPin = String((req.body && req.body.hostPin) || "").trim();
-    if (hostEmail.length > 254 || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(hostEmail) || !/^\\d{4}$/.test(hostPin)) {
+    if (hostEmail.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(hostEmail) || !/^\d{4}$/.test(hostPin)) {
       return res.status(400).json({ error: "Enter the host email and 4-digit PIN." });
     }
     const { data, error } = await supabase.rpc("list_host_baskets", {
